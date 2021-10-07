@@ -7,6 +7,7 @@ module Quaderno::Behavior
 
     module ClassMethods
       include Quaderno::Helpers::Authentication
+      include Quaderno::Helpers::Connect
 
       def parse_nested(element)
         if element.has_key?('payments')
@@ -36,12 +37,17 @@ module Quaderno::Behavior
 
       def all(options = {})
         authentication = get_authentication(options.merge(api_model: api_model))
+        connect_header = connect_header_for(options[:access_token])
         filter = options.dup.delete_if { |k,v| %w(auth_token access_token api_url mode api_model).include? k.to_s }
+
+        headers = default_headers
+          .merge(authentication[:headers])
+          .merge(connect_header)
 
         response = get("#{authentication[:url]}#{api_model.api_path}.json",
           query: filter,
           basic_auth: authentication[:basic_auth],
-          headers: default_headers.merge(authentication[:headers])
+          headers: headers
         )
 
         handle_all_response(response, authentication, options)
@@ -67,14 +73,20 @@ module Quaderno::Behavior
         object
       end
 
-      def create(params = {})
+      def create(params = {}, options = {})
         authentication = get_authentication(params.merge(api_model: api_model))
+        connect_header = connect_header_for(options[:access_token])
         params.dup.delete_if { |k,v| %w(auth_token access_token api_url mode api_model').include? k.to_s }
+
+        headers = default_headers
+          .merge(authentication[:headers])
+          .merge('Content-Type' => 'application/json')
+          .merge(connect_header)
 
         response = post("#{authentication[:url]}#{api_model.api_path}.json",
           body: params.to_json,
           basic_auth: authentication[:basic_auth],
-          headers: default_headers.merge(authentication[:headers]).merge('Content-Type' => 'application/json')
+          headers: headers
         )
 
         check_exception_for(response, { rate_limit: true, subdomain_or_token: true, required_fields: true })
