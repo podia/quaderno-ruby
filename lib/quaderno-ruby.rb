@@ -7,7 +7,6 @@ require 'quaderno-ruby/version'
 require 'quaderno-ruby/helpers/rate_limit'
 require 'quaderno-ruby/exceptions/exceptions'
 require 'quaderno-ruby/helpers/authentication'
-require 'quaderno-ruby/helpers/connect'
 require 'quaderno-ruby/collection'
 
 %w(block crud deliver payment retrieve).each { |filename| require "quaderno-ruby/behavior/#{filename}" }
